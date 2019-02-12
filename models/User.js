@@ -1,35 +1,44 @@
 const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
+const bcrypt = require("bcrypt");
 
-const schema = mongoose.Schema;
-
-const RecipeSchema = new Schema({
-    name: {
+const UserSchema = new Schema({
+    username: {
+        type: String,
+        required: true,
+        unique: true
+    },
+    password: {
         type: String,
         required: true
     },
-    catgory: {
-        type: Sting,
-        required: true
-    },
-    description: {
+    email: {
         type: String,
         required: true
     },
-    instructions: {
-        type: String,
-        required: true
-    },
-    createdDate: {
+    joinedDate: {
         type: Date,
         default: Date.now
     },
-    likes: {
-        type: Number,
-        default: 0
-    },
-    username: {
-        type: String
+    favorites: {
+        type: [Schema.Types.ObjectId],
+        ref: 'Recipe'
     }
-})
+});
 
-module.exports = mongoose.model('Recipe', RecipeSchema);
+UserSchema.pre("save", function (next) {
+    if (!this.isModified("password")) {
+        return next();
+    }
+    bcrypt.genSalt(10, (err, salt) => {
+        if (err) return next(err);
+
+        bcrypt.hash(this.password, salt, (err, hash) => {
+            if (err) return next(err);
+            this.password = hash;
+            next();
+        });
+    });
+});
+
+module.exports = mongoose.model('User', UserSchema);
